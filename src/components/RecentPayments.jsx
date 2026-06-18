@@ -70,48 +70,46 @@ export default function RecentPayments({ refreshTrigger }) {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead>
-              <tr className="bg-slate-50 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                <th className="px-6 py-3">ID</th>
-                <th className="px-6 py-3">Method</th>
-                <th className="px-6 py-3">Phone</th>
-                <th className="px-6 py-3">Amount</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Receipt</th>
-                <th className="px-6 py-3">Date</th>
+              <tr className="bg-slate-50 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-3 py-2.5">ID</th>
+                <th className="px-3 py-2.5">Method</th>
+                <th className="px-3 py-2.5">Phone</th>
+                <th className="px-3 py-2.5">Amount</th>
+                <th className="px-3 py-2.5">Status</th>
+                <th className="px-3 py-2.5">Receipt</th>
+                <th className="px-3 py-2.5">Date</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {transactions.map((tx) => (
                 <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-3.5 font-mono text-xs text-slate-500 max-w-[120px] truncate">
+                  <td className="px-3 py-2.5 font-mono text-slate-500 max-w-[100px] truncate">
                     {tx.id}
                   </td>
-                  <td className="px-6 py-3.5">
-                    <span className="flex items-center gap-1.5">
-                      <span className="font-medium text-slate-700">{tx.paymentMethod}</span>
-                    </span>
+                  <td className="px-3 py-2.5">
+                    <span className="font-medium text-slate-700">{tx.paymentMethod}</span>
                   </td>
-                  <td className="px-6 py-3.5 text-slate-600">{maskPhone(tx.phoneNumber)}</td>
-                  <td className="px-6 py-3.5 font-semibold text-slate-800">
+                  <td className="px-3 py-2.5 text-slate-600">{maskPhone(tx.phoneNumber)}</td>
+                  <td className="px-3 py-2.5 font-semibold text-slate-800">
                     KES {Number(tx.amount).toFixed(2)}
                   </td>
-                  <td className="px-6 py-3.5">
+                  <td className="px-3 py-2.5">
                     <span
-                      className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                         STATUS_STYLES[tx.status] ?? 'bg-slate-100 text-slate-600'
                       }`}
                     >
                       {tx.status}
                     </span>
                   </td>
-                  <td className="px-6 py-3.5">
+                  <td className="px-3 py-2.5">
                     {tx.receiptNumber
-                      ? <span className="font-mono text-xs text-slate-700">{tx.receiptNumber}</span>
-                      : <span className="text-slate-300 text-xs">—</span>}
+                      ? <span className="font-mono text-slate-700">{tx.receiptNumber}</span>
+                      : <span className="text-slate-300">—</span>}
                   </td>
-                  <td className="px-6 py-3.5 text-slate-500 whitespace-nowrap">
+                  <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap">
                     {formatDate(tx.createdAt)}
                   </td>
                 </tr>

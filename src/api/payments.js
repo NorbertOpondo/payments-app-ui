@@ -1,18 +1,32 @@
-const BASE = '/api/v1/payments'
+const BASE = '/api/v1'
+
+let authToken = null
+
+export const setAuthToken = (token) => { authToken = token }
+export const clearAuthToken = () => { authToken = null }
 
 async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  })
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(authToken && { Authorization: `Bearer ${authToken}` }),
+    ...options.headers,
+  }
+  const res = await fetch(`${BASE}${path}`, { ...options, headers })
   const body = await res.json()
   if (!res.ok) throw new Error(body.errors || body.description || 'Request failed')
   return body.data
 }
 
-export const initiatePayment = (payload) =>
-  request('', { method: 'POST', body: JSON.stringify(payload) })
+export const login = (credentials) =>
+  request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) })
 
-export const getTransactions = () => request('')
+export const initiatePayment = (payload, idempotencyKey) =>
+  request('/payments', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+  })
 
-export const getTransaction = (id) => request(`/${id}`)
+export const getTransactions = () => request('/payments')
+
+export const getTransaction = (id) => request(`/payments/${id}`)
