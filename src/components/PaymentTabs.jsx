@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { initiatePayment } from '../api/payments'
+import { useState, useRef, useEffect } from 'react'
+import { initiatePayment, getTransaction } from '../api/payments'
 
 const SAVED_CARDS = [
   { id: 'card_1', last4: '4242', brand: 'Visa', expiry: '08/27' },
@@ -14,23 +14,73 @@ const STATUS_COLORS = {
   INITIATED: 'bg-slate-100 text-slate-600',
 }
 
+const TERMINAL = new Set(['COMPLETED', 'FAILED'])
+const POLL_INTERVAL_MS = 3000
+const MAX_POLLS = 15
+
+
 export default function PaymentTabs({ onPaymentSuccess }) {
   const [activeTab, setActiveTab] = useState('mpesa')
   const [amount, setAmount] = useState('')
   const [phone, setPhone] = useState('')
   const [selectedCard, setSelectedCard] = useState(SAVED_CARDS[0].id)
   const [loading, setLoading] = useState(false)
+  const [polling, setPolling] = useState(false)
+  const [pollCount, setPollCount] = useState(0)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+  const intervalRef = useRef(null)
 
-  const resetState = () => {
+  const clearPollInterval = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }
+
+  useEffect(() => {
+    return () => clearPollInterval()
+  }, [])
+
+  const startPolling = (id) => {
+    setPolling(true)
+    setPollCount(0)
+    let count = 0
+    intervalRef.current = setInterval(async () => {
+      count++
+      setPollCount(count)
+      try {
+        const data = await getTransaction(id)
+        setResult(data)
+        if (TERMINAL.has(data.status) || count >= MAX_POLLS) {
+          clearPollInterval()
+          setPolling(false)
+          onPaymentSuccess()
+          if (!TERMINAL.has(data.status)) {
+            setError('Payment confirmation timed out. Please check your transaction history.')
+          }
+        }
+      } catch (err) {
+        clearPollInterval()
+        setPolling(false)
+        setError(err.message)
+      }
+    }, POLL_INTERVAL_MS)
+  }
+
+  const resetForm = () => {
+    clearPollInterval()
+    setPolling(false)
+    setPollCount(0)
     setResult(null)
     setError(null)
+    setAmount('')
+    setPhone('')
   }
 
   const handleTabChange = (tab) => {
     setActiveTab(tab)
-    resetState()
+    resetForm()
   }
 
   const handleSubmit = async (e) => {
@@ -51,6 +101,10 @@ export default function PaymentTabs({ onPaymentSuccess }) {
       setAmount('')
       setPhone('')
       onPaymentSuccess()
+
+      if (activeTab === 'mpesa' && !TERMINAL.has(data.status)) {
+        startPolling(data.id)
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -58,33 +112,119 @@ export default function PaymentTabs({ onPaymentSuccess }) {
     }
   }
 
+  const tabHeaders = (
+    <div className="flex border-b border-slate-200">
+      <button
+        onClick={() => handleTabChange('mpesa')}
+        className={`flex-1 py-4 text-sm font-semibold tracking-wide transition-colors ${
+          activeTab === 'mpesa'
+            ? 'text-green-700 border-b-2 border-green-600 bg-green-50'
+            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+        }`}
+      >
+        <span className="mr-2"></span>M-Pesa
+      </button>
+      <button
+        onClick={() => handleTabChange('card')}
+        className={`flex-1 py-4 text-sm font-semibold tracking-wide transition-colors ${
+          activeTab === 'card'
+            ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50'
+            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+        }`}
+      >
+        <span className="mr-2"></span>Card
+      </button>
+    </div>
+  )
+
+  // Waiting for PIN screen
+  if (polling) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        {tabHeaders}
+        <div className="p-8 flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
+            <span className="text-3xl">📱</span>
+          </div>
+          <h3 className="text-base font-semibold text-slate-800 mb-2">Waiting for M-Pesa PIN</h3>
+          <p className="text-sm text-slate-500 mb-1">
+            An STK push was sent to <span className="font-medium text-slate-700">{result?.phoneNumber}</span>
+          </p>
+          <p className="text-sm text-slate-500 mb-6">Enter your PIN on your phone to confirm the payment.</p>
+
+          <div className="flex justify-center gap-1.5 mb-5">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="w-2.5 h-2.5 rounded-full bg-green-400 animate-bounce"
+                style={{ animationDelay: `${i * 0.18}s` }}
+              />
+            ))}
+          </div>
+
+          <p className="text-xs text-slate-400 mb-6">
+            Checking status ({pollCount}/{MAX_POLLS})
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Done screen (terminal state after polling)
+  if (result && TERMINAL.has(result.status)) {
+    const success = result.status === 'COMPLETED'
+    let receiptNumber = null
+    if (result.metadata) {
+      try {
+        const meta = JSON.parse(result.metadata)
+        receiptNumber = meta.MpesaReceiptNumber ?? null
+      } catch { /* ignore */ }
+    }
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        {tabHeaders}
+        <div className="p-8 flex flex-col items-center text-center">
+          <div
+            className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+              success ? 'bg-green-100' : 'bg-red-100'
+            }`}
+          >
+            <span className="text-3xl">{success ? '✅' : '❌'}</span>
+          </div>
+          <h3 className={`text-base font-semibold mb-1 ${success ? 'text-green-700' : 'text-red-600'}`}>
+            {success ? 'Payment Successful' : 'Payment Failed'}
+          </h3>
+          {success && receiptNumber && (
+            <p className="text-xs text-slate-500 mb-1">
+              Receipt: <span className="font-mono font-medium text-slate-700">{receiptNumber}</span>
+            </p>
+          )}
+          <p className="text-xs text-slate-400 mb-1">
+            Transaction ID: <span className="font-mono">{result.id}</span>
+          </p>
+          <p className="text-xs text-slate-400 mb-6">
+            Amount: <span className="font-medium">KES {Number(result.amount).toFixed(2)}</span>
+          </p>
+          <button
+            onClick={resetForm}
+            className={`px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              success
+                ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
+                : 'bg-slate-600 hover:bg-slate-700 focus:ring-slate-500'
+            }`}
+          >
+            Make Another Payment
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Default: payment form
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      {/* Tab headers */}
-      <div className="flex border-b border-slate-200">
-        <button
-          onClick={() => handleTabChange('mpesa')}
-          className={`flex-1 py-4 text-sm font-semibold tracking-wide transition-colors ${
-            activeTab === 'mpesa'
-              ? 'text-green-700 border-b-2 border-green-600 bg-green-50'
-              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-          }`}
-        >
-          <span className="mr-2">📱</span>M-Pesa
-        </button>
-        <button
-          onClick={() => handleTabChange('card')}
-          className={`flex-1 py-4 text-sm font-semibold tracking-wide transition-colors ${
-            activeTab === 'card'
-              ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50'
-              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-          }`}
-        >
-          <span className="mr-2">💳</span>Card
-        </button>
-      </div>
+      {tabHeaders}
 
-      {/* Tab body */}
       <form onSubmit={handleSubmit} className="p-6 space-y-5">
         {activeTab === 'mpesa' && (
           <div>
@@ -147,7 +287,6 @@ export default function PaymentTabs({ onPaymentSuccess }) {
           </div>
         )}
 
-        {/* Amount input shared across tabs */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
             Amount (KES)
@@ -169,7 +308,6 @@ export default function PaymentTabs({ onPaymentSuccess }) {
           </div>
         </div>
 
-        {/* Feedback */}
         {error && (
           <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
             <span>⚠️</span>
@@ -177,7 +315,7 @@ export default function PaymentTabs({ onPaymentSuccess }) {
           </div>
         )}
 
-        {result && (
+        {result && !TERMINAL.has(result.status) && (
           <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-800">
             <p className="font-semibold mb-1">Payment initiated</p>
             <p className="text-xs text-green-600">

@@ -9,11 +9,6 @@ const STATUS_STYLES = {
   INITIATED: 'bg-slate-100 text-slate-600',
 }
 
-const METHOD_ICONS = {
-  MPESA: '📱',
-  CARD: '💳',
-}
-
 function formatDate(dt) {
   if (!dt) return '—'
   return new Date(dt).toLocaleString('en-KE', {
@@ -83,6 +78,7 @@ export default function RecentPayments({ refreshTrigger }) {
                 <th className="px-6 py-3">Phone</th>
                 <th className="px-6 py-3">Amount</th>
                 <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Receipt</th>
                 <th className="px-6 py-3">Date</th>
               </tr>
             </thead>
@@ -94,7 +90,6 @@ export default function RecentPayments({ refreshTrigger }) {
                   </td>
                   <td className="px-6 py-3.5">
                     <span className="flex items-center gap-1.5">
-                      <span>{METHOD_ICONS[tx.paymentMethod] ?? '💸'}</span>
                       <span className="font-medium text-slate-700">{tx.paymentMethod}</span>
                     </span>
                   </td>
@@ -110,6 +105,11 @@ export default function RecentPayments({ refreshTrigger }) {
                     >
                       {tx.status}
                     </span>
+                  </td>
+                  <td className="px-6 py-3.5">
+                    {tx.receiptNumber
+                      ? <span className="font-mono text-xs text-slate-700">{tx.receiptNumber}</span>
+                      : <span className="text-slate-300 text-xs">—</span>}
                   </td>
                   <td className="px-6 py-3.5 text-slate-500 whitespace-nowrap">
                     {formatDate(tx.createdAt)}
