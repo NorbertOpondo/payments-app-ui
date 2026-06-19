@@ -30,7 +30,11 @@ export default function LoginScreen({ onLogin }) {
 
         <div className="bg-white rounded-2xl border border-slate-200 p-6">
           <h2 className="text-base font-semibold text-slate-800 mb-1">Welcome back</h2>
-          <p className="text-sm text-slate-500 mb-6">Sign in to manage your subscription</p>
+          <p className="text-sm text-slate-500 mb-4">Sign in to manage your subscription</p>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-xs text-slate-500 mb-4">
+            <span className="font-medium text-slate-600">Test credentials — </span>
+            username: <span className="font-mono font-medium text-slate-700">johndoe</span> &nbsp;·&nbsp; password: <span className="font-mono font-medium text-slate-700">johndoe123</span>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
