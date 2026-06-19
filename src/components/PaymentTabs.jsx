@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { initiatePayment, getTransaction } from '../api/payments'
 
+const MANUAL_PAYMENT = {
+  paybill: '400200',
+  account: 'PAYAPP001',
+}
+
 const PLANS = [
   { id: 'basic', name: 'Basic', price: 500, description: 'Essential features for individuals' },
   { id: 'premium', name: 'Premium', price: 1500, description: 'Advanced tools for power users' },
@@ -232,7 +237,7 @@ export default function PaymentTabs({ onPaymentSuccess }) {
             <span className="text-3xl">{success ? '✅' : '❌'}</span>
           </div>
           <h3 className={`text-base font-semibold mb-1 ${success ? 'text-green-700' : 'text-red-600'}`}>
-            {success ? `${selectedPlan.name} Plan Renewed!` : 'Renewal Failed'}
+            {success ? `${selectedPlan.name} Plan Renewed!` : 'M-Pesa Payment Failed'}
           </h3>
           {success && (
             <p className="text-sm text-slate-500 mb-2">
@@ -250,6 +255,32 @@ export default function PaymentTabs({ onPaymentSuccess }) {
           <p className="text-xs text-slate-400 mb-6">
             Amount: <span className="font-medium">KES {Number(result.amount).toFixed(2)}</span>
           </p>
+
+          {!success && (
+            <div className="w-full bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-left">
+              <p className="text-sm font-semibold text-amber-800 mb-3">Pay manually via M-Pesa</p>
+              <ol className="text-xs text-amber-700 space-y-1 mb-4 list-decimal list-inside">
+                <li>Go to M-Pesa &rarr; Lipa na M-Pesa &rarr; Pay Bill</li>
+                <li>Enter the business number and account below</li>
+                <li>Enter the exact amount and your PIN</li>
+              </ol>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-white border border-amber-200 rounded-lg p-3 text-center">
+                  <p className="text-xs text-amber-600 font-medium mb-1">Paybill</p>
+                  <p className="text-base font-bold text-slate-800 font-mono">{MANUAL_PAYMENT.paybill}</p>
+                </div>
+                <div className="bg-white border border-amber-200 rounded-lg p-3 text-center">
+                  <p className="text-xs text-amber-600 font-medium mb-1">Account</p>
+                  <p className="text-base font-bold text-slate-800 font-mono">{MANUAL_PAYMENT.account}</p>
+                </div>
+                <div className="bg-white border border-amber-200 rounded-lg p-3 text-center">
+                  <p className="text-xs text-amber-600 font-medium mb-1">Amount</p>
+                  <p className="text-base font-bold text-slate-800 font-mono">KES {Number(result.amount).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <button
             onClick={resetForm}
             className={`px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${
