@@ -39,7 +39,7 @@ export default function App() {
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">
+            <div className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">
               P
             </div>
             <span className="text-base font-semibold text-slate-800">PayApp</span>

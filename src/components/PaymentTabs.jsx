@@ -129,7 +129,7 @@ export default function PaymentTabs({ onPaymentSuccess }) {
             key={plan.id}
             className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
               selectedPlan.id === plan.id
-                ? 'border-indigo-500 bg-indigo-50'
+                ? 'border-green-500 bg-green-50'
                 : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
             }`}
           >
@@ -139,14 +139,14 @@ export default function PaymentTabs({ onPaymentSuccess }) {
                 name="plan"
                 checked={selectedPlan.id === plan.id}
                 onChange={() => setSelectedPlan(plan)}
-                className="accent-indigo-600"
+                className="accent-green-600"
               />
               <div>
                 <p className="text-sm font-semibold text-slate-800">{plan.name}</p>
                 <p className="text-xs text-slate-400">{plan.description}</p>
               </div>
             </div>
-            <span className={`text-sm font-bold ${selectedPlan.id === plan.id ? 'text-indigo-600' : 'text-slate-700'}`}>
+            <span className={`text-sm font-bold ${selectedPlan.id === plan.id ? 'text-green-600' : 'text-slate-700'}`}>
               KES {plan.price.toLocaleString()}<span className="text-xs font-normal text-slate-400">/mo</span>
             </span>
           </label>

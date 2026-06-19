@@ -50,7 +50,7 @@ export default function RecentPayments({ refreshTrigger }) {
         <h2 className="text-base font-semibold text-slate-800">Recent Payments</h2>
         <button
           onClick={fetchTransactions}
-          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+          className="text-xs text-green-600 hover:text-green-800 font-medium transition-colors"
         >
           Refresh
         </button>
