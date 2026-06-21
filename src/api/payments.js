@@ -1,9 +1,11 @@
 const BASE = `${import.meta.env.VITE_API_URL ?? ''}/api/v1`
 
 let authToken = null
+let onUnauthorized = null
 
 export const setAuthToken = (token) => { authToken = token }
 export const clearAuthToken = () => { authToken = null }
+export const setUnauthorizedHandler = (fn) => { onUnauthorized = fn }
 
 async function request(path, options = {}) {
   const headers = {
@@ -12,6 +14,10 @@ async function request(path, options = {}) {
     ...options.headers,
   }
   const res = await fetch(`${BASE}${path}`, { ...options, headers })
+  if (res.status === 401) {
+    onUnauthorized?.()
+    throw new Error('Session expired. Please log in again.')
+  }
   const body = await res.json()
   if (!res.ok) throw new Error(body.errors || body.description || 'Request failed')
   return body.data

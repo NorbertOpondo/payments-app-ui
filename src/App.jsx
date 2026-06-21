@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import PaymentTabs from './components/PaymentTabs'
 import RecentPayments from './components/RecentPayments'
 import LoginScreen from './components/LoginScreen'
-import { setAuthToken, clearAuthToken } from './api/payments'
+import { setAuthToken, clearAuthToken, setUnauthorizedHandler } from './api/payments'
 
 export default function App() {
   const [user, setUser] = useState(() => {
@@ -11,10 +11,6 @@ export default function App() {
     return token ? { token, username } : null
   })
   const [refreshTrigger, setRefreshTrigger] = useState(0)
-
-  useEffect(() => {
-    if (user?.token) setAuthToken(user.token)
-  }, [user])
 
   const handleLogin = (token, username) => {
     localStorage.setItem('auth_token', token)
@@ -29,6 +25,14 @@ export default function App() {
     clearAuthToken()
     setUser(null)
   }
+
+  useEffect(() => {
+    if (user?.token) setAuthToken(user.token)
+  }, [user])
+
+  useEffect(() => {
+    setUnauthorizedHandler(handleLogout)
+  }, [])
 
   if (!user) {
     return <LoginScreen onLogin={handleLogin} />
